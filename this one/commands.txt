@@ -1,0 +1,22 @@
+# Commands for Uroflow Ensemble Analysis
+
+# 1. Top-Only Analysis
+# Runs analysis only on the top view.
+# Volume 369ml is used to normalize the curve.
+python scripts/run_analysis.py --top-video data/top.mp4 --output-dir outputs_top/ --volume 369
+
+# 2. Side-Only Analysis
+# Runs analysis only on the side view.
+python scripts/run_analysis.py --side-video data/side.mp4 --output-dir outputs_side/ --volume 369
+
+# 3. Full Ensemble Analysis (Recommended)
+# Combines Top and Side views, calculates confidence, and fuses results.
+# Adjusts final scale to match 369ml exactly.
+python scripts/run_analysis.py \
+    --top-video data/top.mp4 \
+    --side-video data/side.mp4 \
+    --output-dir outputs_ensemble/ \
+    --volume 369
+
+# 4. Generate Synthetic Test Video (if needed)
+python scripts/generate_test_video.py --output data/sample_videos/synthetic_test.mp4

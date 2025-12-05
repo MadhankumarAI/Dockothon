@@ -1,0 +1,14 @@
+{
+    "Qmax": 62.02584269700835,
+    "Time_to_Qmax": 19.626215808993972,
+    "Voided_Volume": 369.0,
+    "Hesitancy": 0.0,
+    "Voiding_Time": 23.96165855354659,
+    "Flow_Time": 22.74439962911451,
+    "Average_Flow_Rate": 16.223774028647156,
+    "inputs": {
+        "top": "data/top.mp4",
+        "side": null,
+        "volume_manual": 369.0
+    }
+}

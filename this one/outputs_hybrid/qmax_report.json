@@ -1,0 +1,16 @@
+{
+    "Qmax": 66124.49552491406,
+    "Time_to_Qmax": 19.459468011126564,
+    "Voided_Volume": 369.0,
+    "Flow_Time": 23.96165855354659,
+    "Voiding_Time": 23.96165855354659,
+    "Hesitancy": 0.0,
+    "Average_Flow_Rate": 35450.08635835802,
+    "Models_Used": "CV + Analytical_Reasoning",
+    "Hybrid_Rationale": "Calculated Avg Flow: 15.40 ml/s (Vol 369.0 / Dur 24.0); Expected Qmax Range: 20.02 - 38.50 ml/s; CV Qmax (91824.61) is suspiciously high (> 38.50). Suggesting Clamp.",
+    "inputs": {
+        "top": "data/top.mp4",
+        "side": null,
+        "volume_manual": 369.0
+    }
+}

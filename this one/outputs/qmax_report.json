@@ -1,0 +1,11 @@
+{
+    "Qmax": 40.013637372310534,
+    "Time_to_Qmax": 18.992574177097822,
+    "Voided_Volume": 368.63981608559317,
+    "Flow_Time": 23.878284654612887,
+    "Voiding_Time": 23.861609874826147,
+    "Hesitancy": 0.10004867872044507,
+    "Average_Flow_Rate": 15.43828718929264,
+    "calibration_scale_cm_px": 0.08549990571575292,
+    "volume_correction_factor": 0.40013637372310534
+}
