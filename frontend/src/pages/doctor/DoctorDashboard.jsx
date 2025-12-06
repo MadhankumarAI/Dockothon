@@ -1,414 +1,68 @@
-// import { useState, useEffect } from 'react';
-// import { entryAPI, reportAPI, doctorAPI, analysisAPI } from '../../services/api';
-// import './Dashboard.css';
-
-// const DoctorDashboard = () => {
-//   const [profile, setProfile] = useState(null);
-//   const [entries, setEntries] = useState([]);
-//   const [selectedEntry, setSelectedEntry] = useState(null);
-//   const [reports, setReports] = useState([]);
-//   const [analysis, setAnalysis] = useState(null);
-//   const [analysisLoading, setAnalysisLoading] = useState(false);
-//   const [showReportModal, setShowReportModal] = useState(false);
-//   const [reportForm, setReportForm] = useState({
-//     report_type: 'diagnosis',
-//     title: '',
-//     description: '',
-//     report_url: '',
-//   });
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-
-//   useEffect(() => {
-//     fetchData();
-//   }, []);
-
-//   const fetchData = async () => {
-//     try {
-//       const [profileRes, entriesRes] = await Promise.all([
-//         doctorAPI.getProfile(),
-//         entryAPI.getMyEntries()
-//       ]);
-//       setProfile(profileRes.data);
-//       setEntries(entriesRes.data);
-//     } catch {
-//       setError('Failed to load data');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleSelectEntry = async (entry) => {
-//     setSelectedEntry(entry);
-//     setAnalysis(null);
-//     try {
-//       const [reportsRes] = await Promise.all([
-//         reportAPI.getForEntry(entry.id)
-//       ]);
-//       setReports(reportsRes.data);
-      
-//       // Try to get analysis (may not exist)
-//       try {
-//         const analysisRes = await analysisAPI.getForEntry(entry.id);
-//         setAnalysis(analysisRes.data);
-//       } catch {
-//         setAnalysis(null);
-//       }
-//     } catch {
-//       setReports([]);
-//     }
-//   };
-
-//   const toggleAutoAccept = async () => {
-//     try {
-//       const response = await doctorAPI.toggleAutoAccept(!profile.auto_accept);
-//       setProfile(response.data);
-//     } catch {
-//       setError('Failed to update auto-accept setting');
-//     }
-//   };
-
-//   const handleRunAnalysis = async () => {
-//     if (!selectedEntry) return;
-    
-//     setAnalysisLoading(true);
-//     setError('');
-    
-//     try {
-//       const response = await analysisAPI.runAnalysis(selectedEntry.id);
-//       setAnalysis(response.data);
-//       setSuccess('Analysis completed successfully!');
-//       setTimeout(() => setSuccess(''), 3000);
-//     } catch (err) {
-//       setError(err.response?.data?.detail || 'Failed to run analysis');
-//     } finally {
-//       setAnalysisLoading(false);
-//     }
-//   };
-
-//   const handleReportSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!selectedEntry) return;
-
-//     try {
-//       await reportAPI.create({
-//         entry_id: selectedEntry.id,
-//         ...reportForm
-//       });
-//       setSuccess('Report added successfully!');
-//       setShowReportModal(false);
-//       setReportForm({ report_type: 'diagnosis', title: '', description: '', report_url: '' });
-//       const response = await reportAPI.getForEntry(selectedEntry.id);
-//       setReports(response.data);
-//       setTimeout(() => setSuccess(''), 3000);
-//     } catch (err) {
-//       setError(err.response?.data?.detail || 'Failed to add report');
-//     }
-//   };
-
-//   const handleDeleteReport = async (reportId) => {
-//     if (!confirm('Are you sure you want to delete this report?')) return;
-    
-//     try {
-//       await reportAPI.delete(reportId);
-//       setReports(reports.filter(r => r.id !== reportId));
-//       setSuccess('Report deleted');
-//       setTimeout(() => setSuccess(''), 3000);
-//     } catch {
-//       setError('Failed to delete report');
-//     }
-//   };
-
-//   const formatDate = (dateStr) => {
-//     return new Date(dateStr).toLocaleString();
-//   };
-
-//   const parseQmaxReport = (jsonStr) => {
-//     try {
-//       return JSON.parse(jsonStr);
-//     } catch {
-//       return null;
-//     }
-//   };
-
-//   if (loading) return <div className="dashboard-loading">Loading...</div>;
-//   if (error && !profile) return <div className="dashboard-error">{error}</div>;
-
-//   return (
-//     <div className="dashboard-container">
-//       <div className="dashboard-header">
-//         <h1>Doctor Dashboard</h1>
-//         <p>Welcome back, Dr. {profile?.user?.username}</p>
-//       </div>
-
-//       {error && <div className="error-message">{error}</div>}
-//       {success && <div className="success-message">{success}</div>}
-
-//       <div className="dashboard-grid">
-//         {/* Profile Card */}
-//         <div className="dashboard-card profile-card">
-//           <div className="card-header">
-//             <h2>Profile Overview</h2>
-//           </div>
-//           <div className="card-content">
-//             <div className="profile-info">
-//               <div className="info-row">
-//                 <span className="label">Hospital:</span>
-//                 <span className="value">{profile?.hospital}</span>
-//               </div>
-//               <div className="info-row">
-//                 <span className="label">Specialization:</span>
-//                 <span className="value">{profile?.specialization}</span>
-//               </div>
-//             </div>
-//             <div className="setting-item" style={{ marginTop: '1rem' }}>
-//               <div className="setting-info">
-//                 <h3>Auto Accept & Auto Analysis</h3>
-//                 <p style={{ fontSize: '0.8rem', color: '#666' }}>When enabled, analysis runs automatically on new entries</p>
-//               </div>
-//               <label className="toggle-switch">
-//                 <input
-//                   type="checkbox"
-//                   checked={profile?.auto_accept || false}
-//                   onChange={toggleAutoAccept}
-//                 />
-//                 <span className="toggle-slider"></span>
-//               </label>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Entries List */}
-//         <div className="dashboard-card entries-card">
-//           <div className="card-header">
-//             <h2>Patient Entries ({entries.length})</h2>
-//           </div>
-//           <div className="card-content">
-//             {entries.length === 0 ? (
-//               <p className="no-data">No entries yet</p>
-//             ) : (
-//               <div className="entries-list">
-//                 {entries.map((entry) => (
-//                   <div
-//                     key={entry.id}
-//                     className={`entry-item ${selectedEntry?.id === entry.id ? 'selected' : ''}`}
-//                     onClick={() => handleSelectEntry(entry)}
-//                   >
-//                     <div className="entry-header">
-//                       <span className="entry-patient">Patient: {entry.patient_name || 'Unknown'}</span>
-//                       <span className="entry-time">{formatDate(entry.time)}</span>
-//                     </div>
-//                     <div className="entry-details">
-//                       {entry.notes && <p className="entry-notes">{entry.notes.substring(0, 50)}...</p>}
-//                       {entry.amount_voided && <span>Amount: {entry.amount_voided}ml</span>}
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Entry Details & Analysis */}
-//         {selectedEntry && (
-//           <div className="dashboard-card reports-card">
-//             <div className="card-header">
-//               <h2>Entry Details & Analysis</h2>
-//             </div>
-//             <div className="card-content">
-//               <div className="entry-full-details">
-//                 <p><strong>Time:</strong> {formatDate(selectedEntry.time)}</p>
-//                 {selectedEntry.top_view_url && (
-//                   <p><strong>Top View:</strong> <a href={selectedEntry.top_view_url} target="_blank" rel="noopener noreferrer">View Video</a></p>
-//                 )}
-//                 {selectedEntry.bottom_view_url && (
-//                   <p><strong>Bottom View:</strong> <a href={selectedEntry.bottom_view_url} target="_blank" rel="noopener noreferrer">View Video</a></p>
-//                 )}
-//                 {selectedEntry.amount_voided && <p><strong>Amount Voided:</strong> {selectedEntry.amount_voided}ml</p>}
-//                 {selectedEntry.diameter_of_commode && <p><strong>Diameter:</strong> {selectedEntry.diameter_of_commode}cm</p>}
-//                 {selectedEntry.notes && <p><strong>Notes:</strong> {selectedEntry.notes}</p>}
-//               </div>
-
-//               {/* Analysis Section - Only visible to doctors */}
-//               <div className="analysis-section">
-//                 <div className="reports-header">
-//                   <h3>📊 AI Analysis</h3>
-//                   {(selectedEntry.top_view_url || selectedEntry.bottom_view_url) && (
-//                     <button 
-//                       className="add-report-btn" 
-//                       onClick={handleRunAnalysis}
-//                       disabled={analysisLoading}
-//                     >
-//                       {analysisLoading ? 'Running...' : (analysis ? '🔄 Re-run Analysis' : '🔬 Run Analysis')}
-//                     </button>
-//                   )}
-//                 </div>
-                
-//                 {analysisLoading && (
-//                   <div className="analysis-loading">
-//                     <p>🔄 Running CNN analysis on video... This may take a few minutes.</p>
-//                   </div>
-//                 )}
-                
-//                 {analysis ? (
-//                   <div className="analysis-results">
-//                     {analysis.qmax_report_json && (() => {
-//                       const qmax = parseQmaxReport(analysis.qmax_report_json);
-//                       return qmax ? (
-//                         <div className="qmax-summary">
-//                           <div className="qmax-item highlight">
-//                             <span className="qmax-label">Qmax</span>
-//                             <span className="qmax-value">{qmax.Qmax?.toFixed(2) || 'N/A'} ml/s</span>
-//                           </div>
-//                           <div className="qmax-item highlight">
-//                             <span className="qmax-label">Voided Volume</span>
-//                             <span className="qmax-value">{qmax.Voided_Volume?.toFixed(2) || 'N/A'} ml</span>
-//                           </div>
-//                           <div className="qmax-item">
-//                             <span className="qmax-label">Time to Qmax</span>
-//                             <span className="qmax-value">{qmax.Time_to_Qmax?.toFixed(2) || 'N/A'} s</span>
-//                           </div>
-//                           <div className="qmax-item">
-//                             <span className="qmax-label">Hesitancy</span>
-//                             <span className="qmax-value">{qmax.Hesitancy?.toFixed(2) || 'N/A'} s</span>
-//                           </div>
-//                           <div className="qmax-item">
-//                             <span className="qmax-label">Voiding Time</span>
-//                             <span className="qmax-value">{qmax.Voiding_Time?.toFixed(2) || 'N/A'} s</span>
-//                           </div>
-//                           <div className="qmax-item">
-//                             <span className="qmax-label">Flow Time</span>
-//                             <span className="qmax-value">{qmax.Flow_Time?.toFixed(2) || 'N/A'} s</span>
-//                           </div>
-//                           <div className="qmax-item">
-//                             <span className="qmax-label">Average Flow Rate</span>
-//                             <span className="qmax-value">{qmax.Average_Flow_Rate?.toFixed(2) || 'N/A'} ml/s</span>
-//                           </div>
-//                         </div>
-//                       ) : null;
-//                     })()}
-                    
-//                     <div className="analysis-links">
-//                       {analysis.annotated_video_url && (
-//                         <a href={analysis.annotated_video_url} target="_blank" rel="noopener noreferrer" className="analysis-link">
-//                           🎬 Annotated Video
-//                         </a>
-//                       )}
-//                       {analysis.clinical_report_url && (
-//                         <a href={analysis.clinical_report_url} target="_blank" rel="noopener noreferrer" className="analysis-link">
-//                           📈 Clinical Report
-//                         </a>
-//                       )}
-//                       {analysis.flow_timeseries_url && (
-//                         <a href={analysis.flow_timeseries_url} target="_blank" rel="noopener noreferrer" className="analysis-link">
-//                           📊 Flow Data (CSV)
-//                         </a>
-//                       )}
-//                     </div>
-//                   </div>
-//                 ) : (
-//                   !analysisLoading && <p className="no-data">No analysis yet. Click "Run Analysis" to start.</p>
-//                 )}
-//               </div>
-
-//               {/* Reports Section */}
-//               <div className="reports-section">
-//                 <div className="reports-header">
-//                   <h3>Reports ({reports.length})</h3>
-//                   <button className="add-report-btn" onClick={() => setShowReportModal(true)}>
-//                     + Add Report
-//                   </button>
-//                 </div>
-                
-//                 {reports.length === 0 ? (
-//                   <p className="no-data">No reports yet</p>
-//                 ) : (
-//                   <div className="reports-list">
-//                     {reports.map((report) => (
-//                       <div key={report.id} className="report-item">
-//                         <div className="report-header">
-//                           <span className="report-type">{report.report_type}</span>
-//                           <button className="delete-btn-small" onClick={() => handleDeleteReport(report.id)}>×</button>
-//                         </div>
-//                         <h4>{report.title}</h4>
-//                         {report.description && <p>{report.description}</p>}
-//                         {report.report_url && (
-//                           <a href={report.report_url} target="_blank" rel="noopener noreferrer">View Document</a>
-//                         )}
-//                         <span className="report-date">{formatDate(report.created_at)}</span>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Add Report Modal */}
-//       {showReportModal && (
-//         <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
-//           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-//             <div className="modal-header">
-//               <h2>Add Report</h2>
-//               <button className="close-btn" onClick={() => setShowReportModal(false)}>×</button>
-//             </div>
-//             <form onSubmit={handleReportSubmit} className="report-form">
-//               <div className="form-group">
-//                 <label>Report Type</label>
-//                 <select
-//                   value={reportForm.report_type}
-//                   onChange={(e) => setReportForm({ ...reportForm, report_type: e.target.value })}
-//                 >
-//                   <option value="diagnosis">Diagnosis</option>
-//                   <option value="prescription">Prescription</option>
-//                   <option value="lab_results">Lab Results</option>
-//                   <option value="notes">Clinical Notes</option>
-//                   <option value="other">Other</option>
-//                 </select>
-//               </div>
-//               <div className="form-group">
-//                 <label>Title *</label>
-//                 <input
-//                   type="text"
-//                   value={reportForm.title}
-//                   onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
-//                   required
-//                   placeholder="Report title"
-//                 />
-//               </div>
-//               <div className="form-group">
-//                 <label>Description</label>
-//                 <textarea
-//                   value={reportForm.description}
-//                   onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
-//                   rows="3"
-//                   placeholder="Report description"
-//                 />
-//               </div>
-//               <div className="form-group">
-//                 <label>Document URL (optional)</label>
-//                 <input
-//                   type="url"
-//                   value={reportForm.report_url}
-//                   onChange={(e) => setReportForm({ ...reportForm, report_url: e.target.value })}
-//                   placeholder="https://..."
-//                 />
-//               </div>
-//               <button type="submit" className="save-btn">Add Report</button>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default DoctorDashboard;
 import { useState, useEffect } from 'react';
 import { entryAPI, reportAPI, doctorAPI, analysisAPI } from '../../services/api';
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQAPI;
+
+const groqAPI = {
+  generateReport: async (patientData, flowData, clinicalObservations) => {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'mixtral-8x7b-32768',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a medical report specialist. Generate a detailed Video Uroflowmetry report in the exact format of the provided template. Fill in all sections based on the provided data. Use checkbox notation like ☐✓ for checked and ☐_ for unchecked.`
+            },
+            {
+              role: 'user',
+              content: `Generate a Video Uroflowmetry report with the following data:
+              
+              PATIENT DETAILS:
+              - Name: ${patientData.name || 'Not provided'}
+              - Age/Sex: ${patientData.age || ''}/${patientData.sex || ''}
+              - Date: ${patientData.date || new Date().toLocaleDateString()}
+              - UHID: ${patientData.uhid || 'Not provided'}
+              
+              FLOW PARAMETERS:
+              - Voided Volume: ${flowData.voidedVolume || ''} mL
+              - Qmax: ${flowData.qmax || ''} mL/s
+              - Qavg: ${flowData.qavg || ''} mL/s
+              - Flow Time: ${flowData.flowTime || ''} s
+              - Time to Qmax: ${flowData.timeToQmax || ''} s
+              
+              CLINICAL OBSERVATIONS:
+              - Flow Curve Pattern: ${clinicalObservations.flowPattern || ''}
+              - Stream Pattern: ${clinicalObservations.streamPattern || ''}
+              - Initiation: ${clinicalObservations.initiation || ''}
+              - Straining: ${clinicalObservations.straining ? 'Yes' : 'No'}
+              - Meatal Abnormality: ${clinicalObservations.meatalAbnormality || 'Not seen'}
+              - Combined Interpretation: ${clinicalObservations.interpretation || ''}
+              - Impression: ${clinicalObservations.impression || ''}
+              - Indication: ${clinicalObservations.indication || ''}
+              - Recommendations: ${clinicalObservations.recommendations || ''}
+              
+              Generate the report exactly in the template format with checkboxes marked appropriately.`
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
+      });
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || '';
+    } catch (error) {
+      console.error('Groq API error:', error);
+      throw error;
+    }
+  }
+};
 
 const DoctorDashboard = () => {
   const [profile, setProfile] = useState(null);
@@ -418,6 +72,49 @@ const DoctorDashboard = () => {
   const [analysis, setAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showUroflowModal, setShowUroflowModal] = useState(false);
+  const [reportGenerating, setReportGenerating] = useState(false);
+  const [reportContent, setReportContent] = useState('');
+  const [reportFileName, setReportFileName] = useState('');
+  
+  const [uroflowForm, setUroflowForm] = useState({
+    // Patient Details
+    patientName: '',
+    patientAge: '',
+    patientSex: '',
+    patientDate: new Date().toLocaleDateString('en-CA'),
+    patientUHID: '',
+    
+    // Indication
+    indication: [],
+    otherIndication: '',
+    
+    // Flow Parameters (from model analysis)
+    voidedVolume: '',
+    qmax: '',
+    qavg: '',
+    flowTime: '',
+    timeToQmax: '',
+    
+    // Flow Curve Pattern (single selection)
+    flowPattern: '',
+    
+    // Video Stream Assessment
+    streamPattern: '',
+    initiation: '',
+    straining: false,
+    meatalAbnormality: '',
+    
+    // Combined Interpretation
+    interpretation: '',
+    
+    // Impression (multiple selection allowed)
+    impression: [],
+    
+    // Recommendations
+    recommendations: '',
+  });
+
   const [reportForm, setReportForm] = useState({
     report_type: 'diagnosis',
     title: '',
@@ -459,12 +156,51 @@ const DoctorDashboard = () => {
       try {
         const analysisRes = await analysisAPI.getForEntry(entry.id);
         setAnalysis(analysisRes.data);
+        // Auto-fill flow parameters from analysis if available
+        if (analysisRes.data.qmax_report_json) {
+          try {
+            const qmaxData = JSON.parse(analysisRes.data.qmax_report_json);
+            setUroflowForm(prev => ({
+              ...prev,
+              voidedVolume: qmaxData.Voided_Volume?.toFixed(2) || '',
+              qmax: qmaxData.Qmax?.toFixed(2) || '',
+              qavg: qmaxData.Qavg?.toFixed(2) || '',
+              flowTime: qmaxData.Voiding_Time?.toFixed(2) || '',
+              timeToQmax: qmaxData.Time_to_Qmax?.toFixed(2) || '',
+              patientName: entry.patient_name || '',
+            }));
+          } catch (e) {
+            console.error('Error parsing Qmax data:', e);
+          }
+        }
       } catch {
         setAnalysis(null);
       }
     } catch {
       setReports([]);
     }
+  };
+
+  const handleUroflowFormChange = (field, value) => {
+    setUroflowForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleIndicationChange = (value) => {
+    setUroflowForm(prev => {
+      const newIndications = prev.indication.includes(value)
+        ? prev.indication.filter(item => item !== value)
+        : [...prev.indication, value];
+      return { ...prev, indication: newIndications };
+    });
+  };
+
+  const handleImpressionChange = (value) => {
+    setUroflowForm(prev => {
+      const newImpressions = prev.impression.includes(value)
+        ? prev.impression.filter(item => item !== value)
+        : [...prev.impression, value];
+      return { ...prev, impression: newImpressions };
+    });
   };
 
   const toggleAutoAccept = async () => {
@@ -487,10 +223,231 @@ const DoctorDashboard = () => {
       setAnalysis(response.data);
       setSuccess('Analysis completed successfully!');
       setTimeout(() => setSuccess(''), 3000);
+      
+      // Auto-fill flow parameters from new analysis
+      if (response.data.qmax_report_json) {
+        try {
+          const qmaxData = JSON.parse(response.data.qmax_report_json);
+          setUroflowForm(prev => ({
+            ...prev,
+            voidedVolume: qmaxData.Voided_Volume?.toFixed(2) || '',
+            qmax: qmaxData.Qmax?.toFixed(2) || '',
+            qavg: qmaxData.Qavg?.toFixed(2) || '',
+            flowTime: qmaxData.Voiding_Time?.toFixed(2) || '',
+            timeToQmax: qmaxData.Time_to_Qmax?.toFixed(2) || '',
+          }));
+        } catch (e) {
+          console.error('Error parsing Qmax data:', e);
+        }
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to run analysis');
     } finally {
       setAnalysisLoading(false);
+    }
+  };
+
+  const generateReport = async () => {
+    if (!selectedEntry) {
+      setError('Please select a patient entry first');
+      return;
+    }
+
+    setReportGenerating(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Prepare data for Groq API
+      const patientData = {
+        name: uroflowForm.patientName || selectedEntry.patient_name || 'Not provided',
+        age: uroflowForm.patientAge,
+        sex: uroflowForm.patientSex,
+        date: uroflowForm.patientDate,
+        uhid: uroflowForm.patientUHID,
+      };
+
+      const flowData = {
+        voidedVolume: uroflowForm.voidedVolume,
+        qmax: uroflowForm.qmax,
+        qavg: uroflowForm.qavg,
+        flowTime: uroflowForm.flowTime,
+        timeToQmax: uroflowForm.timeToQmax,
+      };
+
+      const clinicalObservations = {
+        flowPattern: uroflowForm.flowPattern,
+        streamPattern: uroflowForm.streamPattern,
+        initiation: uroflowForm.initiation,
+        straining: uroflowForm.straining,
+        meatalAbnormality: uroflowForm.meatalAbnormality,
+        interpretation: uroflowForm.interpretation,
+        impression: uroflowForm.impression.join(', '),
+        indication: [...uroflowForm.indication, uroflowForm.otherIndication ? `Other: ${uroflowForm.otherIndication}` : ''].filter(Boolean).join(', '),
+        recommendations: uroflowForm.recommendations,
+      };
+
+      // Call Groq API
+      const reportText = await groqAPI.generateReport(patientData, flowData, clinicalObservations);
+      setReportContent(reportText);
+      
+      // Generate filename
+      const fileName = `Uroflowmetry_Report_${patientData.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`;
+      setReportFileName(fileName);
+      
+      setSuccess('Report generated successfully!');
+    } catch (err) {
+      setError('Failed to generate report with AI. Using fallback template...');
+      generateFallbackReport();
+    } finally {
+      setReportGenerating(false);
+    }
+  };
+
+  const generateFallbackReport = () => {
+    // Fallback template generation
+    const report = `# VIDEO UROFLOWMETRY 
+
+## Patient Details
+
+Name: ${uroflowForm.patientName || selectedEntry.patient_name || '________________'} Age/Sex: ${uroflowForm.patientAge || '__'}/${uroflowForm.patientSex || '__'} Date: ${uroflowForm.patientDate}
+
+UHID / Hospital No.: ${uroflowForm.patientUHID || '________________'}
+
+## Indication
+
+${['LUTS', 'Suspected obstruction', 'Dysfunctional voiding', 'Follow‑up'].map(item => 
+  `${uroflowForm.indication.includes(item) ? '☐✓' : '☐_'} ${item}`
+).join(' ')}
+${uroflowForm.otherIndication ? `☐ Other: ${uroflowForm.otherIndication}` : '☐ Other: ________'}
+
+## Method
+
+Video uroflowmetry performed with synchronized flow curve + stream video in natural voiding position.
+
+## Flow Parameters
+
+Voided Volume: ${uroflowForm.voidedVolume || '______'} mL Qmax: ${uroflowForm.qmax || '______'} mL/s Qavg: ${uroflowForm.qavg || '______'} mL/s
+
+Flow Time: ${uroflowForm.flowTime || '______'} s Time to Qmax: ${uroflowForm.timeToQmax || '______'} s
+
+## Flow Curve Pattern
+
+${['Normal bell‑shaped', 'Plateau', 'Staccato', 'Interrupted', 'Tower', 'Low amplitude'].map(item =>
+  `${uroflowForm.flowPattern === item ? '☐✓' : '☐_'} ${item}`
+).join(' ')}
+
+## Video Stream Assessment
+
+Stream: ${['Normal', 'Thin', 'Splayed', 'Intermittent', 'Dribbling', 'Spraying'].map(item =>
+  `${uroflowForm.streamPattern === item ? '☐✓' : '☐_'} ${item}`
+).join(' ')}
+
+Initiation: ${['Smooth', 'Hesitant'].map(item =>
+  `${uroflowForm.initiation === item ? '☐✓' : '☐_'} ${item}`
+).join(' ')} Straining: ${uroflowForm.straining ? '☐✓ Yes ☐_ No' : '☐_ Yes ☐✓ No'}
+
+Meatal abnormality: ${['Suspected', 'Not seen'].map(item =>
+  `${uroflowForm.meatalAbnormality === item ? '☐✓' : '☐_'} ${item}`
+).join(' ')}
+
+## Combined Interpretation(visual + video analysis)
+
+${uroflowForm.interpretation || 'Flow pattern correlates with visual stream pattern'}
+
+## Impression
+
+${['Normal voiding', 'Bladder outlet obstruction', 'Dysfunctional voiding', 'Meatal stenosis', 'Detrusor underactivity', 'Inconclusive (VV < 50 mL)'].map(item =>
+  `${uroflowForm.impression.includes(item) ? '☐✓' : '☐_'} ${item}`
+).join(' ')}
+
+## Recommendations
+
+${uroflowForm.recommendations || '________________________________________________________________'}
+
+Generated on: ${new Date().toLocaleDateString()}
+Doctor: Dr. ${profile?.user?.username || ''}
+`;
+
+    setReportContent(report);
+    const fileName = `Uroflowmetry_Report_${uroflowForm.patientName || 'Patient'}_${new Date().toISOString().split('T')[0]}.docx`;
+    setReportFileName(fileName);
+    setSuccess('Report generated successfully!');
+  };
+
+  const downloadReport = () => {
+    if (!reportContent) {
+      setError('No report content to download');
+      return;
+    }
+
+    const element = document.createElement('a');
+    const file = new Blob([reportContent], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = reportFileName;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    setSuccess('Report downloaded!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const saveReportToServer = async () => {
+    if (!reportContent || !selectedEntry) {
+      setError('No report content to save');
+      return;
+    }
+
+    try {
+      // Convert report to base64 for storage
+      const reportBase64 = btoa(unescape(encodeURIComponent(reportContent)));
+      
+      await reportAPI.create({
+        entry_id: selectedEntry.id,
+        report_type: 'uroflowmetry',
+        title: `Video Uroflowmetry Report - ${uroflowForm.patientName || 'Patient'}`,
+        description: `Video uroflowmetry analysis with Qmax: ${uroflowForm.qmax} mL/s, Voided Volume: ${uroflowForm.voidedVolume} mL`,
+        report_url: `data:text/plain;base64,${reportBase64}`,
+      });
+      
+      setSuccess('Report saved to server!');
+      setShowUroflowModal(false);
+      
+      // Refresh reports list
+      const response = await reportAPI.getForEntry(selectedEntry.id);
+      setReports(response.data);
+      
+      // Reset form
+      setUroflowForm({
+        patientName: '',
+        patientAge: '',
+        patientSex: '',
+        patientDate: new Date().toLocaleDateString('en-CA'),
+        patientUHID: '',
+        indication: [],
+        otherIndication: '',
+        voidedVolume: '',
+        qmax: '',
+        qavg: '',
+        flowTime: '',
+        timeToQmax: '',
+        flowPattern: '',
+        streamPattern: '',
+        initiation: '',
+        straining: false,
+        meatalAbnormality: '',
+        interpretation: '',
+        impression: [],
+        recommendations: '',
+      });
+      
+      setReportContent('');
+      setReportFileName('');
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to save report to server');
     }
   };
 
@@ -969,12 +926,20 @@ const DoctorDashboard = () => {
                       <h2 className="text-xl font-bold text-gray-900">
                         Medical Reports <span className="text-gray-500">({reports.length})</span>
                       </h2>
-                      <button
-                        onClick={() => setShowReportModal(true)}
-                        className="px-4 py-2 bg-[rgb(193,218,216)] text-gray-900 rounded-lg hover:bg-[rgb(175,205,203)] transition-colors duration-300 font-medium"
-                      >
-                        + Add Report
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setShowUroflowModal(true)}
+                          className="px-4 py-2 bg-gradient-to-r from-[rgb(193,218,216)] to-emerald-300 text-gray-900 rounded-lg hover:shadow-md transition-all duration-300 font-medium"
+                        >
+                          📊 Generate Uroflowmetry Report
+                        </button>
+                        <button
+                          onClick={() => setShowReportModal(true)}
+                          className="px-4 py-2 bg-[rgb(193,218,216)] text-gray-900 rounded-lg hover:bg-[rgb(175,205,203)] transition-colors duration-300 font-medium"
+                        >
+                          + Add Report
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="p-6">
@@ -993,12 +958,13 @@ const DoctorDashboard = () => {
                             <div className="flex justify-between items-start mb-3">
                               <div>
                                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  report.report_type === 'uroflowmetry' ? 'bg-blue-100 text-blue-700' :
                                   report.report_type === 'diagnosis' ? 'bg-blue-100 text-blue-700' :
                                   report.report_type === 'prescription' ? 'bg-green-100 text-green-700' :
                                   report.report_type === 'lab_results' ? 'bg-purple-100 text-purple-700' :
                                   'bg-gray-100 text-gray-700'
                                 }`}>
-                                  {report.report_type}
+                                  {report.report_type === 'uroflowmetry' ? 'Video Uroflowmetry' : report.report_type}
                                 </span>
                                 <h3 className="font-bold text-gray-900 mt-2">{report.title}</h3>
                               </div>
@@ -1044,6 +1010,400 @@ const DoctorDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Video Uroflowmetry Report Modal */}
+      {showUroflowModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 sticky top-0 bg-white">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Video Uroflowmetry Report</h2>
+                <button
+                  onClick={() => {
+                    setShowUroflowModal(false);
+                    setReportContent('');
+                    setReportFileName('');
+                  }}
+                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-300"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">Fill in the details below to generate a comprehensive uroflowmetry report</p>
+            </div>
+            
+            <form className="p-6 space-y-8">
+              {/* Patient Details Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Patient Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Patient Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={uroflowForm.patientName}
+                      onChange={(e) => handleUroflowFormChange('patientName', e.target.value)}
+                      required
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="Enter patient name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Age / Sex *
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={uroflowForm.patientAge}
+                        onChange={(e) => handleUroflowFormChange('patientAge', e.target.value)}
+                        required
+                        className="w-1/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                        placeholder="Age"
+                      />
+                      <select
+                        value={uroflowForm.patientSex}
+                        onChange={(e) => handleUroflowFormChange('patientSex', e.target.value)}
+                        required
+                        className="w-1/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      >
+                        <option value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <input
+                        type="date"
+                        value={uroflowForm.patientDate}
+                        onChange={(e) => handleUroflowFormChange('patientDate', e.target.value)}
+                        className="w-1/3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      UHID / Hospital Number
+                    </label>
+                    <input
+                      type="text"
+                      value={uroflowForm.patientUHID}
+                      onChange={(e) => handleUroflowFormChange('patientUHID', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="Enter UHID or Hospital Number"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Indication Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Indication</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {['LUTS', 'Suspected obstruction', 'Dysfunctional voiding', 'Follow‑up'].map((item) => (
+                    <label key={item} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={uroflowForm.indication.includes(item)}
+                        onChange={() => handleIndicationChange(item)}
+                        className="w-4 h-4 text-[rgb(193,218,216)] rounded focus:ring-[rgb(193,218,216)]"
+                      />
+                      <span className="text-sm text-gray-700">{item}</span>
+                    </label>
+                  ))}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Other Indication
+                  </label>
+                  <input
+                    type="text"
+                    value={uroflowForm.otherIndication}
+                    onChange={(e) => handleUroflowFormChange('otherIndication', e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                    placeholder="Specify other indication"
+                  />
+                </div>
+              </div>
+
+              {/* Flow Parameters Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Flow Parameters</h3>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Voided Volume (mL)
+                    </label>
+                    <input
+                      type="number"
+                      value={uroflowForm.voidedVolume}
+                      onChange={(e) => handleUroflowFormChange('voidedVolume', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="mL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Qmax (mL/s)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={uroflowForm.qmax}
+                      onChange={(e) => handleUroflowFormChange('qmax', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="mL/s"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Qavg (mL/s)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={uroflowForm.qavg}
+                      onChange={(e) => handleUroflowFormChange('qavg', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="mL/s"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Flow Time (s)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={uroflowForm.flowTime}
+                      onChange={(e) => handleUroflowFormChange('flowTime', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="seconds"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Time to Qmax (s)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={uroflowForm.timeToQmax}
+                      onChange={(e) => handleUroflowFormChange('timeToQmax', e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300"
+                      placeholder="seconds"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Flow Curve Pattern */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Flow Curve Pattern</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {['Normal bell‑shaped', 'Plateau', 'Staccato', 'Interrupted', 'Tower', 'Low amplitude'].map((pattern) => (
+                    <label key={pattern} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="flowPattern"
+                        checked={uroflowForm.flowPattern === pattern}
+                        onChange={() => handleUroflowFormChange('flowPattern', pattern)}
+                        className="w-4 h-4 text-[rgb(193,218,216)]"
+                      />
+                      <span className="text-sm text-gray-700">{pattern}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Video Stream Assessment */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Video Stream Assessment</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Stream Pattern</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {['Normal', 'Thin', 'Splayed', 'Intermittent', 'Dribbling', 'Spraying'].map((pattern) => (
+                      <label key={pattern} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="streamPattern"
+                          checked={uroflowForm.streamPattern === pattern}
+                          onChange={() => handleUroflowFormChange('streamPattern', pattern)}
+                          className="w-4 h-4 text-[rgb(193,218,216)]"
+                        />
+                        <span className="text-sm text-gray-700">{pattern}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Initiation</label>
+                    <div className="space-y-2">
+                      {['Smooth', 'Hesitant'].map((item) => (
+                        <label key={item} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="initiation"
+                            checked={uroflowForm.initiation === item}
+                            onChange={() => handleUroflowFormChange('initiation', item)}
+                            className="w-4 h-4 text-[rgb(193,218,216)]"
+                          />
+                          <span className="text-sm text-gray-700">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Straining</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={uroflowForm.straining}
+                          onChange={(e) => handleUroflowFormChange('straining', e.target.checked)}
+                          className="w-4 h-4 text-[rgb(193,218,216)] rounded"
+                        />
+                        <span className="text-sm text-gray-700">Yes</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Meatal Abnormality</label>
+                    <div className="space-y-2">
+                      {['Suspected', 'Not seen'].map((item) => (
+                        <label key={item} className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="meatalAbnormality"
+                            checked={uroflowForm.meatalAbnormality === item}
+                            onChange={() => handleUroflowFormChange('meatalAbnormality', item)}
+                            className="w-4 h-4 text-[rgb(193,218,216)]"
+                          />
+                          <span className="text-sm text-gray-700">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Combined Interpretation */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Combined Interpretation</h3>
+                <textarea
+                  value={uroflowForm.interpretation}
+                  onChange={(e) => handleUroflowFormChange('interpretation', e.target.value)}
+                  rows="3"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300 resize-none"
+                  placeholder="Enter your interpretation based on visual + video analysis..."
+                />
+              </div>
+
+              {/* Impression */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Impression</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {['Normal voiding', 'Bladder outlet obstruction', 'Dysfunctional voiding', 'Meatal stenosis', 'Detrusor underactivity', 'Inconclusive (VV < 50 mL)'].map((item) => (
+                    <label key={item} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={uroflowForm.impression.includes(item)}
+                        onChange={() => handleImpressionChange(item)}
+                        className="w-4 h-4 text-[rgb(193,218,216)] rounded focus:ring-[rgb(193,218,216)]"
+                      />
+                      <span className="text-sm text-gray-700">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">Recommendations</h3>
+                <textarea
+                  value={uroflowForm.recommendations}
+                  onChange={(e) => handleUroflowFormChange('recommendations', e.target.value)}
+                  rows="4"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[rgb(193,218,216)] focus:border-transparent transition-all duration-300 resize-none"
+                  placeholder="Enter your recommendations..."
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUroflowModal(false);
+                    setReportContent('');
+                    setReportFileName('');
+                  }}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-300 font-medium"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={generateReport}
+                  disabled={reportGenerating}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-md transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {reportGenerating ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    'Generate Report'
+                  )}
+                </button>
+                
+                {reportContent && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={downloadReport}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:shadow-md transition-all duration-300 font-medium"
+                    >
+                      Download Report
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={saveReportToServer}
+                      className="px-6 py-3 bg-gradient-to-r from-[rgb(193,218,216)] to-emerald-300 text-gray-900 rounded-xl hover:shadow-md transition-all duration-300 font-medium"
+                    >
+                      Save to Patient Record
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              {/* Preview Section */}
+              {reportContent && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Report Preview</h3>
+                  <div className="bg-gray-50 rounded-xl p-4 max-h-60 overflow-y-auto">
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                      {reportContent}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Report Modal */}
       {showReportModal && (

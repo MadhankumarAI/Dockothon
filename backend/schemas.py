@@ -230,4 +230,29 @@ class AnalysisResponse(BaseModel):
 
 
 
+class EntryCreate(BaseModel):
+    doctor_id: int
+    amount_voided: Optional[float] = None
+    diameter_of_commode: Optional[float] = None
+    notes: Optional[str] = None
+    # Note: video_urls are handled separately via file uploads
 
+class EntryResponse(BaseModel):
+    id: int
+    patient_id: int
+    doctor_id: int
+    time: datetime
+    top_view_url: Optional[str]
+    bottom_view_url: Optional[str]
+    amount_voided: Optional[float]
+    diameter_of_commode: Optional[float]
+    notes: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# For backward compatibility with direct URL submissions
+class EntryCreateWithUrls(EntryCreate):
+    top_view_url: Optional[str] = None
+    bottom_view_url: Optional[str] = None
