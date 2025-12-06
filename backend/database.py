@@ -1,33 +1,36 @@
 import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Load environment variables from .env file
-load_dotenv()
+# SQLite file path
+DATABASE_URL = "sqlite:///./app.db"  # Relative path
+# DATABASE_URL = "sqlite:////absolute/path/to/app.db"  # Absolute path if you prefer
 
-# Database connection from environment variable
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Create engine
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}  # Needed for SQLite + SQLAlchemy
+)
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
-
-# Auto-convert postgresql:// to cockroachdb:// for CockroachDB connections
-if "cockroachlabs.cloud" in DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "cockroachdb://", 1)
-
-engine = create_engine(DATABASE_URL)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Session and Base
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
 Base = declarative_base()
 
 
 def get_db():
-    """Dependency to get database session."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    print("SQLite database and tables created successfully!")

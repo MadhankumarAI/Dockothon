@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import json
 
@@ -9,7 +8,7 @@ from routers.patient_router import router as patient_router
 from routers.entry_router import router as entry_router
 from routers.report_router import router as report_router
 from routers.analysis_router import router as analysis_router
-
+from fastapi.middleware.cors import CORSMiddleware
 
 class BigIntJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that converts large integers to strings for JavaScript compatibility."""
@@ -55,12 +54,11 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Update with specific origins in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:5173"],  # Exact frontend origin
+    allow_credentials=True,                   # Needed if sending cookies or auth headers
+    allow_methods=["*"],                       # Allow all HTTP methods
+    allow_headers=["*"],                       # Allow all headers
 )
-
 # Include routers
 app.include_router(auth_router)
 app.include_router(doctor_router)
