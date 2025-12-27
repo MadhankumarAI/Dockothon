@@ -48,7 +48,7 @@ This platform combines:
 
 ## 🏗️ Architecture
 
-![System Architecture](Dockothon/arch.png)
+![System Architecture](arch.png)
 
 The system follows a **modular three-tier architecture**:
 
