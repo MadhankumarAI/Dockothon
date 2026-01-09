@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import urineImg from './assets/urine.png';
 import { AuthProvider } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,6 +20,35 @@ import CreateEntry from './pages/patient/CreateEntry';
 import './App.css';
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 z-50 flex items-center justify-center">
+        <style>{`
+          @keyframes loaderFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+          }
+        `}</style>
+        <div style={{ animation: 'loaderFloat 2s ease-in-out infinite' }}>
+          <img
+            src={urineImg}
+            alt="Loading..."
+            className="w-48 h-auto object-contain"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthProvider>
       <Router>
